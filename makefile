@@ -1,8 +1,10 @@
-all: main.o
+all: sws
+
+sws: main.o
 	gcc main.o -o sws
 
-main.o:
-	gcc -c main.c 
+main.o: main.c
+	gcc -c main.c
 
 clean:
-	rm -rf *.o sws
+	rm -rf *o sws
