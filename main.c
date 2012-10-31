@@ -12,7 +12,18 @@ int listen_socket;
 int client_socket;
 struct sockaddr_in listen_sock_addr;
 struct sockaddr current_client;
-int current_client_len;
+char send_buffer[1024*1024];
+char recv_buffer[1024*1024];
+char send_status_line[100];
+char send_header[100];
+char recv_status_line[100];
+
+char* status_line = "HTTP/1.1 200 OK\x0D\x0A";
+char* header1 = "Content-Type: text/plain";
+char* header2 = "Cache-Control: max-age=300";
+char* body = "Hello World!";
+
+int message_length;
 
 void init_socket() {
   // set state
@@ -48,15 +59,18 @@ void init_socket() {
 }
 
 void handle_request() {
-  // enter listen loop
-  char send_buffer[1024];
-  char* status_line = "HTTP/1.1 200 OK\x0D\x0A";
-  char* header1 = "Content-Type: text/plain";
-  char* header2 = "Cache-Control: max-age=300";
-  char* body = "Hello World!";
-  int message_length;
+  // read request
+  if(recv(client_socket, &recv_buffer, sizeof(recv_buffer), 0) == -1) {
+    perror("recv");
+    exit(-1);
+  }
+
+  printf("%s", recv_buffer);
+  // read status line
+  //  strcpy(recv_status_line, recv_buffer);
 
   //  "Method SP Request-URI SP HTTP-Version CRLF";
+  
   // compose response
   message_length = 0;
   strcpy(send_buffer, status_line);
@@ -94,6 +108,7 @@ void handle_request() {
 int main(int argc, char **argv) {
   init_socket();
 
+  socklen_t current_client_len;
   while(1) {
     current_client_len = sizeof(current_client);
     if((client_socket = accept(listen_socket,
