@@ -1,8 +1,8 @@
 all: main.o
-	gcc output/main.o -o output/sws
+	gcc main.o -o sws
 
 main.o:
-	gcc -c src/main.c -o output/main.o
+	gcc -c main.c 
 
 clean:
-	rm -rf output/*
+	rm -rf *.o sws
