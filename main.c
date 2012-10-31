@@ -13,10 +13,13 @@ int client_socket;
 struct sockaddr_in listen_sock_addr;
 struct sockaddr current_client;
 char send_buffer[1024*1024];
-char recv_buffer[1024*1024];
 char send_status_line[100];
 char send_header[100];
-char recv_status_line[100];
+
+char recv_buffer[1024*1024];
+char request_method[10];
+char request_uri[1024];
+
 
 char* status_line = "HTTP/1.1 200 OK\x0D\x0A";
 char* header1 = "Content-Type: text/plain";
@@ -60,16 +63,14 @@ void init_socket() {
 
 void handle_request() {
   // read request
-  if(recv(client_socket, &recv_buffer, sizeof(recv_buffer), 0) == -1) {
+  int message_len;
+  if((message_len = recv(client_socket, &recv_buffer, sizeof(recv_buffer), 0)) == -1) {
     perror("recv");
     exit(-1);
   }
 
-  printf("%s", recv_buffer);
-  // read status line
-  //  strcpy(recv_status_line, recv_buffer);
-
-  //  "Method SP Request-URI SP HTTP-Version CRLF";
+  // parse status line "Method SP Request-URI SP HTTP-Version CRLF";
+  sscanf(recv_buffer, "%s %s", request_method, request_uri);
   
   // compose response
   message_length = 0;
@@ -96,13 +97,13 @@ void handle_request() {
     exit(-1);
   }
   
-  fprintf(stderr, "Served!\n");
-  
   // close
   if(close(client_socket) == -1) {
     perror("close");
     exit(-1);
   }
+
+  fprintf(stderr, "Served request who asked for METHOD:%s URI:%s\n", request_method, request_uri);
 }
 
 int main(int argc, char **argv) {
