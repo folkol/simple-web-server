@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
   }
 
   // enter listen loop
+  char* message = "HTTP/1.1 200 OK\n\nHello World!";
   while(1) {
     // accept
     current_client_len = sizeof(current_client);
@@ -55,7 +56,12 @@ int main(int argc, char **argv) {
       break;
     }
 
-    fprintf(stderr, "Hello world!\n");
+    if(send(client_socket, message, strlen(message), 0) == -1) {
+      perror("send");
+      break;
+    }
+
+    fprintf(stderr, "Served!\n");
     
     // close
     if(close(client_socket) == -1) {
