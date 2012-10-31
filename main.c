@@ -72,27 +72,20 @@ void handle_request() {
   // parse status line "Method SP Request-URI SP HTTP-Version CRLF";
   sscanf(recv_buffer, "%s %s", request_method, request_uri);
   
-  // compose response
-  message_length = 0;
-  strcpy(send_buffer, status_line);
-  message_length += strlen(status_line);
-  
-  strcat(send_buffer, header1);
-  message_length += strlen(header1);
-  strcat(send_buffer, "\x0D\x0A");
-  message_length += 2;
-  
-  strcat(send_buffer, header2);
-  message_length += strlen(header2);
-  strcat(send_buffer, "\x0D\x0A");
-  message_length += 2;
-  
-  strcat(send_buffer, "\x0D\x0A");
-  message_length += 2;
-  strcat(send_buffer, body);
-  message_length += strlen(body);
-  
-  if(send(client_socket, send_buffer, message_length, 0) == -1) {
+  // write status
+  if(send(client_socket, status_line, strlen(status_line), 0) == -1) {
+    perror("send");
+    exit(-1);
+  }
+
+  // write header/body reparator  
+  if(send(client_socket, "\x0D\x0A", 2, 0) == -1) {
+    perror("send");
+    exit(-1);
+  }
+
+  // write body
+  if(send(client_socket, body, strlen(body), 0) == -1) {
     perror("send");
     exit(-1);
   }
