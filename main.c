@@ -48,7 +48,9 @@ int main(int argc, char **argv) {
   while(1) {
     // accept
     current_client_len = sizeof(current_client);
-    if((client_socket = accept(listen_socket, (struct sockaddr*) &current_client, (socklen_t*)&current_client_len)) == -1) {
+    if((client_socket = accept(listen_socket,
+                               (struct sockaddr*) &current_client,
+                               (socklen_t*)&current_client_len)) == -1) {
       perror("accept");
       break;
     }
