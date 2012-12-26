@@ -20,10 +20,12 @@ char recv_buffer[1024*1024];
 char request_method[10];
 char request_uri[1024];
 
+char filename[1024];
+char filebuffer[1024*1024];
 
-char* status_line = "HTTP/1.1 200 OK\x0D\x0A";
+char* status_line_ok = "HTTP/1.1 200 OK\x0D\x0A";
+char* status_line_not_found = "HTTP/1.1 404 Not Found\x0D\x0A\x0D\x0A";
 char* header1 = "Content-Type: text/plain";
-char* header2 = "Cache-Control: max-age=300";
 char* body = "Hello World!";
 
 int message_length;
@@ -71,9 +73,37 @@ void handle_request() {
 
   // parse status line "Method SP Request-URI SP HTTP-Version CRLF";
   sscanf(recv_buffer, "%s %s", request_method, request_uri);
+
+  // open requested file
+  char x;
+  sprintf(filename, "www-root/%s", request_uri);
+
+  FILE *filepointer;
+  int character;
+  filepointer=fopen(filename, "r"); /* filepointer points to data.txt */
+  if (filepointer==NULL) { /* error opening file returns NULL */
+    // write status
+    if(send(client_socket, status_line_not_found, strlen(status_line_ok), 0) == -1) {
+      perror("send");
+      exit(-1);
+    }
+    // close
+    if(close(client_socket) == -1) {
+      perror("close");
+      exit(-1);
+    }
+    return;
+  }
+    
+ /* while character is not end of file */
+  while ((character=fgetc(filepointer)) != EOF) {
+    putchar(character); /* print the character */
+  }
+  fclose(filepointer); /* close the file */
+
   
   // write status
-  if(send(client_socket, status_line, strlen(status_line), 0) == -1) {
+  if(send(client_socket, status_line_ok, strlen(status_line_ok), 0) == -1) {
     perror("send");
     exit(-1);
   }
@@ -96,7 +126,8 @@ void handle_request() {
     exit(-1);
   }
 
-  fprintf(stderr, "Served request who asked for METHOD:%s URI:%s\n", request_method, request_uri);
+  fprintf(stderr, "Served %s as response to a request who asked for METHOD:%s URI:%s\n",
+          filename, request_method, request_uri);
 }
 
 int main(int argc, char **argv) {
