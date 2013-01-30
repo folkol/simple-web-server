@@ -26,12 +26,10 @@ char filebuffer[1024*1024];
 char* status_line_ok = "HTTP/1.1 200 OK\x0D\x0A";
 char* status_line_not_found = "HTTP/1.1 404 Not Found\x0D\x0A\x0D\x0A";
 char* header1 = "Content-Type: text/plain";
-char* body = "Hello World!";
 
 int message_length;
 
 void init_socket() {
-  printf("Initing shit");
   // set state
   errno = 0;
   listen_sock_addr.sin_family = AF_INET;
@@ -83,6 +81,8 @@ void handle_request() {
   int character;
   filepointer=fopen(filename, "r"); /* filepointer points to data.txt */
   if (filepointer==NULL) { /* error opening file returns NULL */
+    fprintf(stderr, "Could not open file %s, sent 404 response to a request who asked for METHOD:%s URI:%s\n",
+            filename, request_method, request_uri);
     // write status
     if(send(client_socket, status_line_not_found, strlen(status_line_not_found), 0) == -1) {
       perror("send");
@@ -95,14 +95,7 @@ void handle_request() {
     }
     return;
   }
-    
- /* while character is not end of file */
-  while ((character=fgetc(filepointer)) != EOF) {
-    putchar(character); /* print the character */
-  }
-  fclose(filepointer); /* close the file */
 
-  
   // write status
   if(send(client_socket, status_line_ok, strlen(status_line_ok), 0) == -1) {
     perror("send");
@@ -115,11 +108,16 @@ void handle_request() {
     exit(-1);
   }
 
-  // write body
-  if(send(client_socket, body, strlen(body), 0) == -1) {
-    perror("send");
-    exit(-1);
+ /* while character is not end of file */
+  while ((character=fgetc(filepointer)) != EOF) {
+    send_buffer[0] = character;
+    // write body
+    if(send(client_socket, send_buffer, 1, 0) == -1) {
+      perror("send");
+      exit(-1);
+    }
   }
+  fclose(filepointer); /* close the file */
   
   // close
   if(close(client_socket) == -1) {
