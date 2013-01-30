@@ -3,8 +3,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
 
 // glooooooobals
@@ -13,8 +11,6 @@ int client_socket;
 struct sockaddr_in listen_sock_addr;
 struct sockaddr current_client;
 char send_buffer[1024*1024];
-char send_status_line[100];
-char send_header[100];
 
 char recv_buffer[1024*1024];
 char request_method[10];
@@ -23,12 +19,11 @@ char request_uri[1024];
 char filename[1024];
 char filebuffer[1024*1024];
 
+char* www_root = "www-root";
 char* status_line_ok = "HTTP/1.1 200 OK\x0D\x0A";
 char* status_line_not_found = "HTTP/1.1 404 Not Found\x0D\x0A\x0D\x0A";
-char* header1 = "Content-Type: text/plain";
 
-int message_length;
-
+// Functions
 void init_socket() {
   // set state
   errno = 0;
@@ -73,15 +68,19 @@ void handle_request() {
   // parse status line "Method SP Request-URI SP HTTP-Version CRLF";
   sscanf(recv_buffer, "%s %s", request_method, request_uri);
 
+  // No uri path given, assume index.html
+  if(strlen(request_uri)==1) {
+    strcpy(request_uri, "/index.html");
+  }
+
   // open requested file
-  char x;
-  sprintf(filename, "www-root/%s", request_uri);
+  sprintf(filename, "%s%s", www_root, request_uri);
 
   FILE *filepointer;
   int character;
   filepointer=fopen(filename, "r"); /* filepointer points to data.txt */
   if (filepointer==NULL) { /* error opening file returns NULL */
-    fprintf(stderr, "Could not open file %s, sent 404 response to a request who asked for METHOD:%s URI:%s\n",
+    fprintf(stderr, "Requsted file %s not found, sent 404 as response to (METHOD:%s URI:%s)\n",
             filename, request_method, request_uri);
     // write status
     if(send(client_socket, status_line_not_found, strlen(status_line_not_found), 0) == -1) {
@@ -124,9 +123,6 @@ void handle_request() {
     perror("close");
     exit(-1);
   }
-
-  fprintf(stderr, "Served %s as response to a request who asked for METHOD:%s URI:%s\n",
-          filename, request_method, request_uri);
 }
 
 int main(int argc, char **argv) {
