@@ -31,6 +31,7 @@ char* body = "Hello World!";
 int message_length;
 
 void init_socket() {
+  printf("Initing shit");
   // set state
   errno = 0;
   listen_sock_addr.sin_family = AF_INET;
@@ -83,7 +84,7 @@ void handle_request() {
   filepointer=fopen(filename, "r"); /* filepointer points to data.txt */
   if (filepointer==NULL) { /* error opening file returns NULL */
     // write status
-    if(send(client_socket, status_line_not_found, strlen(status_line_ok), 0) == -1) {
+    if(send(client_socket, status_line_not_found, strlen(status_line_not_found), 0) == -1) {
       perror("send");
       exit(-1);
     }
